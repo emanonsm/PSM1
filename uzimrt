@@ -1,0 +1,46 @@
+ library(ggplot2)
+ library(dplyr)
+ library(psych)
+library(MatchIt)
+library(vcd)
+library("cobalt")
+um <- read.csv(file = "tab.csv", header = TRUE, sep = ";")
+m_ps <- glm(uzimrt ~ age + menstrual + mm + BIRADS + foci + molekul, family = binomial("logit"), data = um)
+summary(m_ps)
+mod_match <- matchit(uzimrt ~ age + menstrual + mm + BIRADS + foci + molekul, method = "nearest", exact = "histology",  distance = "glm",  caliper = 0.4, data = um)
+mod_match
+summary(mod_match, un =TRUE)
+dta_m <- match.data(mod_match)
+dim(dta_m)
+dta_m
+bal.tab(mod_match, un = TRUE, stats = c("m", "v", "ks"))
+love.plot(mod_match, binary = "std")
+bal.plot(mod_match, var.name = "distance", which = "both", type = "histogram", mirror = TRUE)
+mod_match_out <- mod_match$match.matrix
+mod_match_out
+write.csv(mod_match_out, file = "pary.csv")
+pary <- read.csv(file = "pary.csv", header = TRUE, sep = ";")
+pary
+save.image("C:\\Users\\Admin\\Desktop\\нир\\space")
+library(ROCR)
+rez <- read.csv(file = "rez1.csv", header = TRUE, sep = ";")
+pred <- prediction(rez$CEUS, rez$histology)
+perf <- performance(pred, "tpr","fpr")
+plot(perf, label = "ROC-кривая для метода КУЗИ", lwd = 3,
+
+ main="ROC-кривые для методов КУЗИ и МРТ" , 
+ xlab="1 - Специфичность", 
+ ylab="Чувствительность")
+
+auc_roc <- performance(pred, "auc")
+auc_roc <- auc_roc@y.values[[1]]
+pred1 <- prediction(rez$CEUS1, rez$histology1)
+perf1 <- performance(pred1, "tpr","fpr")
+plot(perf1, add = TRUE, lty = 2 , label = "ROC-кривая для метода МРТ", lwd = 3,
+main="ROC-кривые для методов КУЗИ и МРТ", 
+ xlab="1 - Специфичность", 
+ ylab="Чувствительность")
+legend(0.55,0.1, c("ROC-кривая для КУЗИ", "ROC-кривая для МРТ"), lty = c(1,2), lwd = 3)
+auc_roc1 <- performance(pred1, "auc")
+auc_roc1 <- auc_roc1@y.values[[1]]
+legend(0.8,0.05,c("AUC = 0.91"),border="white",cex=1,box.col = "white")

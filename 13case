@@ -1,0 +1,25 @@
+ library(ggplot2)
+ library(dplyr)
+ library(psych)
+library(MatchIt)
+library(vcd)
+library("cobalt")
+library(DMwR2)
+um <- read.csv(file = "PSM12.csv", header = TRUE, sep = ";")
+colmissing <- apply(um, 2, function(x){sum(is.na(x))})
+colmissing
+um.c <- knnImputation(um, k = 10, meth = 'weighAvg')
+colmissing <- apply(um.c, 2, function(x){sum(is.na(x))})
+colmissing
+m_ps <- glm(Plasma ~ x.sex + x.age + x.CT + x.CRP + x.SpO2, family = binomial("logit"), data = um.c)
+mod_match <- matchit(Plasma ~ x.sex + x.age + x.CT + x.CRP + x.SpO2, method = 'nearest', exact = 'x.CT', distance = 'glm', caliper = 0.3, data = um.c)
+summary(mod_match, un =TRUE)
+mod_match <- matchit(Plasma ~ x.sex + x.age + x.CT + x.CRP + x.SpO2, method = 'nearest', exact = 'x.CT', distance = 'glm', caliper = 0.2, data = um.c)
+summary(mod_match, un =TRUE)
+mod_match <- matchit(Plasma ~ x.sex + x.age + x.CT + x.CRP + x.SpO2, method = 'nearest', exact = 'x.CT', distance = 'glm', caliper = 0.1, data = um.c)
+summary(mod_match, un =TRUE)
+love.plot(mod_match, binary = "std")
+bal.plot(mod_match, var.name = "distance", which = "both", type = "histogram", mirror = TRUE)
+mod_match_out <- mod_match$match.matrix
+mod_match_out
+save.image("C:\\Users\\Admin\\Desktop\\ÍÈÐ\\13")
